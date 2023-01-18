@@ -2,7 +2,7 @@ import tkinter.messagebox as messagebox
 import socket
 
 HOST = "127.0.0.1"
-PORT = 60504  # random pick idk
+PORT = 60504
 
 
 def expandasciiescapes(text: str) -> str:
@@ -17,7 +17,7 @@ def expandasciiescapes(text: str) -> str:
         if text[i] == '%':
             str1 = text[:i:]
             str2 = "%(char)c" % {'char': int(text[i + 1:i + 3:], 16)}
-            str3 = text[i + 3::]  # what if % is later than 3rd to last?
+            str3 = text[i + 3::]
             text = str1 + str2 + str3
         i += 1
 
