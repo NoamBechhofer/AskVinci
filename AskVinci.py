@@ -4,7 +4,14 @@ import socket
 HOST = "127.0.0.1"
 PORT = 60504  # random pick idk
 
+
 def expandasciiescapes(text: str) -> str:
+    """
+    Replace all ASCII escapes in a URI with their corresponding characters.
+
+    This function expects a properly formatted URI. Any occurence of the
+    character '%' must be followed by a valid two-digit uppercase hex number.
+    """
     i = 0
     while i < len(text):
         if text[i] == '%':
@@ -13,8 +20,11 @@ def expandasciiescapes(text: str) -> str:
             str3 = text[i + 3::]  # what if % is later than 3rd to last?
             text = str1 + str2 + str3
         i += 1
-    
+
     return text
+
+print(expandasciiescapes.__doc__)
+
 
 with socket.socket() as localsock:
     try:
@@ -32,6 +42,3 @@ with socket.socket() as localsock:
         query = str(clntconn.recv(4096)).split(" ")[1][1::]  # grab the URI
         query = expandasciiescapes(query)
     print("received request: \"{}\"".format(query))
-
-
-
