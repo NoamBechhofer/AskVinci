@@ -1,4 +1,0 @@
-bound to 127.0.0.1:60504, listening...
-accepted connection from ('127.0.0.1', 62346)
-received request 
-	"this%20is%20a%20test%20message"
