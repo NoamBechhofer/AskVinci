@@ -1,23 +1,26 @@
 import tkinter.messagebox as messagebox
 import re
+import configparser
+import logging
 
 import socket
 
-import configparser
 import openai
 
 
 HOST = "127.0.0.1"
-PORT = 60504
+PORT = 60703
 
 CONFIG_PATH = "config"
 config = configparser.ConfigParser()
 config.read_file(open(CONFIG_PATH))
 
 MODEL = config.get("AskVinci", "MODEL")
-API_KEY = config.get("AskVinci", "OPENAPI_KEY")
 MAX_TOKENS = int(config.get("AskVinci", "MAX_TOKENS"))
 TEMPERATURE = float(config.get("AskVinci", "TEMPERATURE"))
+VERSION = config.get("AskVinci", "VERSION")
+
+openai.api_key = config.get("AskVinci", "OPENAPI_KEY")
 
 
 def expandasciiescapes(text: str) -> str:
@@ -40,9 +43,11 @@ def expandasciiescapes(text: str) -> str:
 
 
 with socket.socket() as localsock:
+    logging.info("socket assigned")
+
     try:
         localsock.bind((HOST, PORT))
-        print("bound to {}:{}, listening...".format(HOST, PORT))
+        logging.info("bound to {}:{}, listening...".format(HOST, PORT))
     except socket.error as e:
         messagebox.showerror(
             "AskVinci", "AskVinci: Could not bind to {}\n{}".format(PORT, str(e)))
@@ -53,11 +58,12 @@ with socket.socket() as localsock:
     while True:
         clntconn, clntaddr = localsock.accept()
         with clntconn:
-            print("accepted connection from {}".format(clntaddr))
-            # need to allow for requests > 4096 though! Also handle no input
+            logging.info("accepted connection from {}".format(clntaddr))
+            # need to allow for requests > 4096 though!
             query = str(clntconn.recv(4096))
             if not query:
                 continue
+
             query = query.split(" ")
             if len(query) < 2:
                 continue
@@ -67,9 +73,9 @@ with socket.socket() as localsock:
             if query == "favicon.ico":
                 clntconn.send(bytes("HTTP/1.0 404 Not Found", "utf-8"))
                 continue
-            print("received query: \"{}\"".format(query))
 
-            openai.api_key = API_KEY
+            logging.info("received query: \"{}\"".format(query))
+
             response = openai.Completion.create(
                 model=MODEL,
                 prompt=query,
@@ -77,28 +83,34 @@ with socket.socket() as localsock:
                 max_tokens=MAX_TOKENS,
                 temperature=TEMPERATURE
             )
-            print(response)
+            
+            logging.debug("OpenAI response: " + str(response))
+
             textline = re.search(r"\"text[ -~]+\n", str(response))
+            if not textline:
+                continue
             try:
-                textline = textline.group(0)
+                textline = textline.group(0)  # TODO: slice this
             except IndexError as e:
                 messagebox.showerror(
                     "AskVinci", "Askvinci: bad response format.\n{}".format(e))
 
-            print(textline) # don't forget to slice this noam!
+            print(textline)  # TODO: remove
 
-            clntconn.send(
-                bytes(
-                    "HTTP/1.0 200 OK\r\n"
-                    "<html>\r\n"
-                    "<body>\r\n"
-                    "<h1> Query: \"{}\"</h1>\r\n".format(query) +
-                    "<h2>DaVinciSez:</h2>\r\n"
-                    "<p>{}</p>\r\n".format(textline) +
-                    "</body>\r\n"
-                    "</html>\r\n",
+            htmlbody = ("<html>\r\n"
+                        "<body>\r\n"
+                        + "<h1> Query: \"{}\"</h1>\r\n".format(query) +
+                        "<h2>DaVinciSez:</h2>\r\n"
+                        + "<p>{}</p>\r\n".format(textline) +
+                        "</body>\r\n"
+                        "</html>\r\n")
 
-                    "utf-8"
-                )
-            )
-            print("")
+            message = ("HTTP/1.0 200 OK\r\n"
+                       "Content-Type: text/html"
+                       + "Content-Length: {}".format(len(htmlbody))
+                       + "Server: AskVinci/{}".format(VERSION) +
+                       "\r\n")
+
+            clntconn.sendall(bytes(message, "utf-8"))
+            clntconn.close()
+            logging.info(str(clntaddr) + " closed.")
