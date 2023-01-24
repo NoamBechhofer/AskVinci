@@ -101,6 +101,7 @@ with socket.socket() as localsock:
                                        "utf-8"))
                 clntconn.sendfile(open("favicon.ico", "rb"))
                 clntconn.close()
+                continue
 
             logging.info("received query: \"{}\"".format(query))
 
