@@ -93,8 +93,7 @@ with socket.socket() as localsock:
             query = query[1][1::]
 
             query = decode_formatters(query)
-            if query == "favicon.ico":
-
+            if query == 'favicon.ico':
                 clntconn.sendall(bytes("HTTP/1.0 200 OK\r\n"
                                        "Content-Type: image/x-icon\r\n"
                                        + "Server: AskVinci/{}\r\n".format(VERSION) +
