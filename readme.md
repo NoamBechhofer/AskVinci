@@ -1,4 +1,6 @@
 # AskVinci
-In the config file, replace the question mark with your OpenAI API key. Then run the included AskVinci.exe
+In the config file, replace the question mark with your OpenAI API key. Then run the AskVinci.py script.
 
-Compatible with Windows
+In your browser, add a search engine which queries http://localhost:60703/%s (with %s in place of a query)
+
+You can now query openai directly from your browser's search bar.
