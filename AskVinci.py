@@ -15,22 +15,20 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#      _        _   __     ___            _ 
+#      _        _   __     ___            _
 #     / \   ___| | _\ \   / (_)_ __   ___(_)
 #    / _ \ / __| |/ /\ \ / /| | '_ \ / __| |
 #   / ___ \\__ \   <  \ V / | | | | | (__| |
 #  /_/   \_\___/_|\_\  \_/  |_|_| |_|\___|_|
+import openai
+import socket
+import logging
+import configparser
+import codecs
+import re
+import tkinter.messagebox as messagebox
 VERSION = "0.0.0"
 
-import tkinter.messagebox as messagebox
-import re
-import codecs
-import configparser
-import logging
-
-import socket
-
-import openai
 
 HOST = "127.0.0.1"
 PORT = 60703
@@ -129,20 +127,28 @@ with socket.socket() as localsock:
 
             response = openai.Completion.create(
                 model=MODEL,
-                prompt=query,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant."
+                    },
+                    {
+                        "role": "user",
+                        "content": query
+                    }
+                ],
                 suffix="\n\n - DaVinci",
-                max_tokens=MAX_TOKENS,
                 temperature=TEMPERATURE
             )
 
             logging.debug("OpenAI response: " + str(response))
 
-            textline = re.search(r"\"text[ -~]+\n", str(response))
-            if not textline:
+            response = response['choices'][0]['message']['content']
+            if not response:
                 continue
             completion = ""
             try:
-                completion = textline.group(0)  # group 0 is the entire match
+                completion = response.group(0)  # group 0 is the entire match
                 # grab the completion
                 completion = decode_escapes(completion[9:len(completion) - 2:])
             except IndexError as e:

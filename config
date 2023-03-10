@@ -1,5 +1,5 @@
 [AskVinci]
 OPENAPI_KEY=?
-MODEL=text-davinci-003
+MODEL=gpt-3.5-turbo
 MAX_TOKENS=2048
 TEMPERATURE=1
